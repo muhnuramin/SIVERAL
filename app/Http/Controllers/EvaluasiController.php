@@ -40,8 +40,13 @@ class EvaluasiController extends Controller
                 'ssp.verified_at'
             ]);
 
-        // Filter by PIC jika bukan admin
-        if (empty($user->roles) || !in_array('admin', $user->roles)) {
+        // Filter by PIC jika user bukan Super Admin (per hak akses grup)
+        $isSuperAdmin = false;
+        if (isset($user->hakaksesgrub) && is_array($user->hakaksesgrub->hak_akses ?? null)) {
+            $isSuperAdmin = in_array('Super Admin', $user->hakaksesgrub->hak_akses ?? []);
+        }
+
+        if (! $isSuperAdmin) {
             $baseQuery->join('sub_sub_kegiatan_user as ssku', 'ssku.sub_sub_kegiatan_id', '=', 'ssk.id')
                 ->where('ssku.user_id', $user->id);
         }

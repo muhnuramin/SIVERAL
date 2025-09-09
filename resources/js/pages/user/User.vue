@@ -71,7 +71,7 @@ const updateForm = useForm({
 // --- embedded HakAksesGrup form state ---
 // groups are passed from server via props.hakGroups
 const groupsProp = computed(() => (props.hakGroups ?? []) as Array<any>);
-const PERMISSIONS = ['Lihat Perencanaan', 'Lihat Evaluasi', 'Lihat Pelaporan', 'Super Admin'];
+const PERMISSIONS = ['Lihat Perencanaan', 'Lihat Evaluasi', 'Lihat Pelaporan', 'Super Admin', 'Validasi'];
 
 const groupForm = useForm({ nama: '', hak_akses: [] as string[] });
 // checkbox model for permissions
