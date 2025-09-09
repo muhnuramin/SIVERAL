@@ -14,6 +14,7 @@ use App\Http\Controllers\SatuanController;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
+use App\Http\Controllers\PrintAnggaranController;
 
 require __DIR__.'/settings.php';
 require __DIR__.'/auth.php';
@@ -59,6 +60,8 @@ Route::delete('/kegiatan/{id}', [KegiatanController::class, 'destroy'])->middlew
 Route::get('/rencana-belanja', [RencanaBelanjaController::class, 'index'])->middleware(['auth', 'verified'])->name('rencana-belanja');
 Route::get('/rencana-belanja/export', [RencanaBelanjaController::class, 'export'])->middleware(['auth', 'verified'])->name('rencana-belanja.export');
 Route::get('/rencana-belanja/{id}', [RencanaBelanjaController::class, 'show'])->middleware(['auth', 'verified'])->name('rencana-belanja.show');
+// Tambah route untuk halaman cetak anggaran
+Route::get('/anggaran/print', [PrintAnggaranController::class, 'show'])->middleware(['auth', 'verified'])->name('anggaran.print');
 
 // Anggaran > Perencanaan
 Route::get('/anggaran/perencanaan', [PerencanaanController::class, 'index'])

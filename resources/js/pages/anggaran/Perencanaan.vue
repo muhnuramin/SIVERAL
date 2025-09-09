@@ -550,6 +550,23 @@ function unvalidateSubSub(row: SubSubRow) {
         },
     });
 }
+
+function printAnggaran(g: Group, a: Activity, sg: SubGroup, r: SubSubRow) {
+    // Simpan context ke localStorage agar halaman print bisa akses
+    const context = {
+        program: { kode: g.programKode, nama: g.programNama },
+        kegiatan: { kode: a.kegiatanKode, nama: a.kegiatanNama },
+        sub_kegiatan: { kode: sg.subKegiatanKode, nama: sg.subKegiatanNama },
+        sub_sub_kegiatan: { kode: r.subSubKode, nama: r.subSubNama, verified_at: r.verifiedAt || null },
+        tahun: selectedYear.value,
+    };
+    try {
+        window.localStorage.setItem('print_context', JSON.stringify(context));
+    } catch {}
+    // Buka halaman print (buat route khusus, misal /anggaran/print?ssk=...&year=...)
+    const url = `/anggaran/print?ssk=${encodeURIComponent(r.subSubKode)}&year=${encodeURIComponent(selectedYear.value)}`;
+    window.open(url, '_blank');
+}
 </script>
 
 <template>
@@ -814,7 +831,7 @@ function unvalidateSubSub(row: SubSubRow) {
                                                     <button
                                                         type="button"
                                                         class="group relative inline-flex items-center rounded border border-gray-200 bg-gray-50 p-2 text-gray-700 hover:bg-gray-100 dark:border-gray-500/30 dark:bg-gray-500/10 dark:text-gray-300"
-                                                        @click.stop
+                                                        @click.stop="printAnggaran(g, a, sg, r)"
                                                         title="Cetak"
                                                     >
                                                         <i class="fa fa-print text-xs"></i>

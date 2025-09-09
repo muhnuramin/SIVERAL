@@ -24,6 +24,7 @@ class User extends Authenticatable
     'roles',
     'NIP',
     'unit',
+    'hakaksesgrub_id',
     ];
 
     /**
@@ -55,5 +56,10 @@ class User extends Authenticatable
     public function subSubKegiatans()
     {
         return $this->belongsToMany(SubSubKegiatan::class, 'sub_sub_kegiatan_user', 'user_id', 'sub_sub_kegiatan_id')->withTimestamps();
+    }
+
+    public function hakaksesgrub()
+    {
+        return $this->belongsTo(HakAksesGrup::class, 'hakaksesgrub_id');
     }
 }

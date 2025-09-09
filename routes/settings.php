@@ -6,6 +6,11 @@ use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
 Route::middleware('auth')->group(function () {
+    // Hak akses grup CRUD
+    Route::get('/hak-akses-grup', [\App\Http\Controllers\HakAksesGrupController::class, 'index'])->name('hakaksesgrup.index');
+    Route::post('/hak-akses-grup', [\App\Http\Controllers\HakAksesGrupController::class, 'store'])->name('hakaksesgrup.store');
+    Route::put('/hak-akses-grup/{id}', [\App\Http\Controllers\HakAksesGrupController::class, 'update'])->name('hakaksesgrup.update');
+    Route::delete('/hak-akses-grup/{id}', [\App\Http\Controllers\HakAksesGrupController::class, 'destroy'])->name('hakaksesgrup.destroy');
     Route::redirect('settings', '/settings/profile');
 
     Route::get('settings/profile', [ProfileController::class, 'edit'])->name('profile.edit');

@@ -31,6 +31,8 @@ class DatabaseSeeder extends Seeder
         RekeningSeeder::class,
         // 6. SSH Items and prices
         RekeningSSHItemSeeder::class,
+    // Hak akses groups
+    \Database\Seeders\HakAksesGrupSeeder::class,
         // 7. Satuan master data
         SatuanSeeder::class,
     ]);
