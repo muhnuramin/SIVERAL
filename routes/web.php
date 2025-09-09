@@ -10,6 +10,7 @@ use App\Http\Controllers\PerencanaanController;
 use App\Http\Controllers\RekeningSshItemController;
 use App\Http\Controllers\EvaluasiController;
 use App\Http\Controllers\SatuanController;
+use App\Http\Controllers\RekeningController;
 
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Route;
@@ -73,6 +74,11 @@ Route::get('/anggaran/rekening', [PerencanaanController::class, 'rekening'])
     ->middleware(['auth', 'verified'])
     ->name('anggaran.rekening.show');
 
+    // Rekening CRUD routes
+    Route::get('/rekening', [RekeningController::class, 'index'])->middleware(['auth', 'verified'])->name('rekening.index');
+    Route::post('/rekening', [RekeningController::class, 'store'])->middleware(['auth', 'verified'])->name('rekening.store');
+    Route::put('/rekening/{id}', [RekeningController::class, 'update'])->middleware(['auth', 'verified'])->name('rekening.update');
+    Route::delete('/rekening/{id}', [RekeningController::class, 'destroy'])->middleware(['auth', 'verified'])->name('rekening.destroy');
 // Anggaran > Perencanaan update pagu & sumber dana & PIC
 Route::post('/anggaran/perencanaan/update', [PerencanaanController::class, 'updatePagu'])
     ->middleware(['auth', 'verified'])

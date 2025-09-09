@@ -55,6 +55,7 @@ const mainNavItems: NavItem[] = [
             { title: 'Program', href: route('program'), icon: FolderTree },
             { title: 'Kegiatan', href: route('kegiatan.index'), icon: Activity },
             { title: 'Satuan', href: route('satuan.index'), icon: Ruler },
+            { title: 'Rekening', href: route('rekening.index'), icon: FileText },
         ],
     },
 ];
