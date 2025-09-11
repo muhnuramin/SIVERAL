@@ -12,7 +12,7 @@ return new class extends Migration {
             $table->string('rekening_kode', 100)->index();
             $table->string('nama');
             $table->string('satuan', 100);
-            $table->string('spesifikasi', 100)->nullable();
+            $table->string('spesifikasi', 500)->nullable();
             $table->decimal('harga', 18, 2)->default(0);
             $table->timestamps();
         });

@@ -11,6 +11,7 @@ const props = withDefaults(
         cancelText?: string;
         variant?: 'danger' | 'info' | 'warning';
         maxWidth?: 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl';
+        hideButton?: boolean;
     }>(),
     {
         title: 'Konfirmasi',
@@ -19,6 +20,7 @@ const props = withDefaults(
         cancelText: 'Batal',
         variant: 'warning',
         maxWidth: 'md',
+        hideButton: false,
     },
 );
 
@@ -102,7 +104,7 @@ const widthClass = computed(() => widthMap[props.maxWidth ?? 'md']);
                                 <slot />
                             </div>
                         </div>
-                        <div class="flex items-center justify-end gap-2 border-t border-border/60 bg-muted/30 px-4 py-3">
+                        <div v-if="!hideButton" class="flex items-center justify-end gap-2 border-t border-border/60 bg-muted/30 px-4 py-3">
                             <button
                                 class="rounded-lg border border-border bg-background px-3 py-1.5 text-sm font-semibold text-foreground hover:bg-muted"
                                 @click="emit('cancel')"

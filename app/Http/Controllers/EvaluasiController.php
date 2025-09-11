@@ -131,7 +131,18 @@ class EvaluasiController extends Controller
             'rows' => 'array',
             'rows.*.sub_sub_kegiatan_id' => 'required|integer|exists:sub_sub_kegiatans,id',
             'rows.*.item_id' => 'required|integer|exists:rekening_ssh_items,id',
-            'rows.*.vol.jan' => 'nullable|integer|min:0',
+            'rows.*.jan_vol' => 'nullable|integer|min:0',
+            'rows.*.feb_vol' => 'nullable|integer|min:0',
+            'rows.*.mar_vol' => 'nullable|integer|min:0',
+            'rows.*.apr_vol' => 'nullable|integer|min:0',
+            'rows.*.mei_vol' => 'nullable|integer|min:0',
+            'rows.*.jun_vol' => 'nullable|integer|min:0',
+            'rows.*.jul_vol' => 'nullable|integer|min:0',
+            'rows.*.agu_vol' => 'nullable|integer|min:0',
+            'rows.*.sep_vol' => 'nullable|integer|min:0',
+            'rows.*.okt_vol' => 'nullable|integer|min:0',
+            'rows.*.nov_vol' => 'nullable|integer|min:0',
+            'rows.*.des_vol' => 'nullable|integer|min:0',
         ]);
         $tahun = (int)$validated['tahun'];
         foreach ($validated['rows'] as $row) {
@@ -141,7 +152,7 @@ class EvaluasiController extends Controller
                 'tahun' => $tahun,
             ]);
             foreach (['jan','feb','mar','apr','mei','jun','jul','agu','sep','okt','nov','des'] as $m) {
-                $plan->{$m.'_vol'} = (int)($row['vol'][$m] ?? 0);
+                $plan->{$m.'_vol'} = (int)($row[$m.'_vol'] ?? 0);
             }
             $plan->save();
         }

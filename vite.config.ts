@@ -24,12 +24,15 @@ export default defineConfig({
                 'resources/js/pages/master/SubKegiatanIndex.vue',
                 'resources/js/pages/master/SubSubKegiatan.vue',
                 'resources/js/pages/master/Akun.vue',
+                'resources/js/pages/master/Rekening.vue',
+                'resources/js/pages/master/HakAksesGrupIndex.vue',
                 'resources/js/pages/Satuan/Index.vue',
                 // Anggaran pages
                 'resources/js/pages/anggaran/Perencanaan.vue',
                 'resources/js/pages/anggaran/RekeningDetail.vue',
                 'resources/js/pages/anggaran/RincianBelanja.vue',
                 'resources/js/pages/evaluasi/Index.vue',
+
                 // User management
                 'resources/js/pages/user/User.vue',
                 // Settings pages

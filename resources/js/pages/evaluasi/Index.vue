@@ -1,8 +1,37 @@
 <script setup lang="ts">
+import ConfirmModal from '@/components/ConfirmModal.vue';
 import useNotify from '@/composables/useNotify';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { Head, router } from '@inertiajs/vue3';
-import { computed, onMounted, ref } from 'vue';
+import { computed, onMounted, ref, ref as vueRef } from 'vue';
+import EvaluasiPdf from './EvaluasiPdf.vue';
+// State untuk modal cetak PDF
+const showPdfModal = vueRef(false);
+const pdfType = vueRef<'bulan' | 'triwulan' | null>(null);
+const selectedTriwulan = vueRef<number | null>(null);
+
+function openPdfModal() {
+    showPdfModal.value = true;
+    pdfType.value = null;
+    selectedTriwulan.value = null;
+}
+
+function closePdfModal() {
+    showPdfModal.value = false;
+}
+
+function handlePdfPrint() {
+    // Panggil EvaluasiPdf dengan props tambahan
+    const type = pdfType.value;
+    const triwulan = selectedTriwulan.value;
+    // Trigger cetak PDF via ref
+    if (type === 'bulan') {
+        document.getElementById('evaluasi-pdf-btn-bulan')?.click();
+    } else if (type === 'triwulan' && triwulan) {
+        document.getElementById('evaluasi-pdf-btn-triwulan-' + triwulan)?.click();
+    }
+    closePdfModal();
+}
 
 const props = defineProps<{
     tahun: number;
@@ -25,7 +54,7 @@ const q = ref('');
 
 // Auto-save variables
 const isSaving = ref(false);
-let saveTimeout: number | null = null;
+let saveTimeout: ReturnType<typeof setTimeout> | null = null;
 
 // Check and redirect with year from localStorage on mount
 onMounted(() => {
@@ -96,19 +125,26 @@ function sisaSub(ssk: any) {
     return (ssk.pagu || 0) - totalPerSub(ssk);
 }
 
-// Calculate total volume for a specific month across all plans in a sub-kegiatan
-function totalVolumePerMonth(ssk: any, month: string) {
-    return ssk.plans.reduce((total: number, p: any) => total + (p.vol[month] || 0), 0);
-}
-
 // Calculate total amount for a specific month across all plans in a sub-kegiatan
 function totalAmountPerMonth(ssk: any, month: string) {
     return ssk.plans.reduce((total: number, p: any) => total + monthlyAmount(p, month), 0);
 }
 
-// Calculate grand total amount for a specific month across all sub-kegiatans
+// Calculate grand total per month
 function grandTotalAmountPerMonth(month: string) {
     return filteredRows.value.reduce((total: number, ssk: any) => total + totalAmountPerMonth(ssk, month), 0);
+}
+
+// Calculate grand total per triwulan
+function grandTotalAmountPerTriwulan(q: number) {
+    // Q1: jan, feb, mar; Q2: apr, mei, jun; Q3: jul, agu, sep; Q4: okt, nov, des
+    const triwulanMap = [
+        ['jan', 'feb', 'mar'],
+        ['apr', 'mei', 'jun'],
+        ['jul', 'agu', 'sep'],
+        ['okt', 'nov', 'des'],
+    ];
+    return triwulanMap[q - 1].reduce((sum, m) => sum + grandTotalAmountPerMonth(m), 0);
 }
 
 const grand = computed(() => {
@@ -129,11 +165,16 @@ function save() {
 
     isSaving.value = true;
     const payload: any[] = [];
-    rows.value.forEach((s) =>
+    rows.value.forEach((s) => {
         s.plans.forEach((p) => {
-            payload.push({ sub_sub_kegiatan_id: s.id, item_id: p.item_id, vol: p.vol });
-        }),
-    );
+            // Mapping vol ke format jan_vol, feb_vol, dst
+            const volPayload: Record<string, number> = {};
+            months.forEach((m) => {
+                volPayload[`${m}_vol`] = p.vol[m] || 0;
+            });
+            payload.push({ sub_sub_kegiatan_id: s.id, item_id: p.item_id, ...volPayload });
+        });
+    });
     router.post(
         route('evaluasi.bulk-save'),
         { tahun: props.tahun, rows: payload },
@@ -204,7 +245,100 @@ function highlightText(text: string, query: string): string {
                     />
                 </div>
             </div>
-
+            <div class="flex items-center gap-3 rounded-md border border-gray-200 bg-gray-50 px-4 py-2 text-sm text-gray-700">
+                <!-- Tombol Cetak PDF -->
+                <button
+                    @click="openPdfModal"
+                    class="inline-flex items-center gap-2 rounded bg-green-600 px-3 py-1 text-xs font-semibold text-white shadow transition hover:bg-green-700"
+                >
+                    <i class="fa fa-print"></i>
+                    Cetak PDF
+                </button>
+                <!-- EvaluasiPdf untuk per bulan (hidden trigger) -->
+                <EvaluasiPdf
+                    :tahun="tahun"
+                    :rows="filteredRows"
+                    :months="months"
+                    :grand="grand"
+                    :grandTotalAmountPerMonth="grandTotalAmountPerMonth"
+                    :formatIDR="formatIDR"
+                    :monthlyAmount="monthlyAmount"
+                    :totalPerItem="totalPerItem"
+                    :sisaSub="sisaSub"
+                    :type="'bulan'"
+                    style="display: none"
+                    id="evaluasi-pdf-btn-bulan"
+                />
+                <!-- EvaluasiPdf untuk per triwulan (hidden triggers) -->
+                <template v-for="q in 4" :key="'pdf-triwulan-' + q">
+                    <EvaluasiPdf
+                        :tahun="tahun"
+                        :rows="filteredRows"
+                        :months="months"
+                        :grand="grand"
+                        :grandTotalAmountPerMonth="grandTotalAmountPerMonth"
+                        :formatIDR="formatIDR"
+                        :monthlyAmount="monthlyAmount"
+                        :totalPerItem="totalPerItem"
+                        :sisaSub="sisaSub"
+                        :type="'triwulan'"
+                        :triwulan="q"
+                        style="display: none"
+                        :id="'evaluasi-pdf-btn-triwulan-' + q"
+                    />
+                </template>
+                <i class="fa fa-hand-pointer text-lg text-gray-600"></i>
+                <ConfirmModal v-if="showPdfModal" :open="showPdfModal" title="Cetak PDF Evaluasi" :hideButton="true" @close="closePdfModal">
+                    <div class="mb-2 flex flex-col gap-3">
+                        <button
+                            @click="pdfType = 'bulan'"
+                            :class="pdfType === 'bulan' ? 'bg-green-600 text-white' : 'bg-gray-100'"
+                            class="rounded px-3 py-2 font-semibold"
+                        >
+                            Jumlah Pengeluaran kas Keseluruhan
+                        </button>
+                        <button
+                            @click="pdfType = 'triwulan'"
+                            :class="pdfType === 'triwulan' ? 'bg-green-600 text-white' : 'bg-gray-100'"
+                            class="rounded px-3 py-2 font-semibold"
+                        >
+                            Jumlah Pengeluaran kas Per Triwulan
+                        </button>
+                    </div>
+                    <div v-if="pdfType === 'triwulan'" class="mt-2 flex flex-col gap-2">
+                        <div class="mb-2 font-semibold">Pilih Triwulan:</div>
+                        <div class="flex gap-2">
+                            <button
+                                v-for="q in 4"
+                                :key="'triwulan-btn-' + q"
+                                @click="selectedTriwulan = q"
+                                :class="selectedTriwulan === q ? 'bg-green-500 text-white' : 'bg-gray-200'"
+                                class="rounded px-3 py-1 font-semibold"
+                            >
+                                Triwulan {{ q }}
+                            </button>
+                        </div>
+                    </div>
+                    <div class="mt-6 flex justify-end gap-2">
+                        <button
+                            @click="handlePdfPrint"
+                            :disabled="!pdfType || (pdfType === 'triwulan' && !selectedTriwulan)"
+                            class="rounded bg-green-600 px-3 py-1 font-semibold text-white disabled:opacity-50"
+                        >
+                            Cetak
+                        </button>
+                    </div>
+                    <template #footer><div style="display: none"></div></template>
+                </ConfirmModal>
+                <div>
+                    <div class="font-medium text-gray-800">Tips</div>
+                    <div class="text-xs text-gray-600">
+                        Untuk scroll tabel ke samping, tahan
+                        <span class="mr-1 ml-1 inline-block rounded border bg-gray-100 px-2 py-0.5 text-[11px] font-semibold">Shift</span>
+                        lalu gulir roda mouse ke atas atau ke bawah.
+                    </div>
+                </div>
+            </div>
             <!-- Search Results Info -->
             <div v-if="q.trim()" class="flex items-center justify-between rounded-lg border border-blue-200 bg-blue-50 px-4 py-3">
                 <div class="flex items-center gap-2">
@@ -246,9 +380,9 @@ function highlightText(text: string, query: string): string {
                         <tr class="bg-gradient-to-r from-green-600 to-green-700 text-white">
                             <th
                                 rowspan="3"
-                                class="sticky left-0 z-20 w-48 min-w-[180px] border border-green-500 bg-gradient-to-r from-green-600 to-green-700 p-2 text-center text-xs font-bold"
+                                class="sticky left-0 z-20 w-60 min-w-[220px] border border-green-500 bg-gradient-to-r from-green-600 to-green-700 p-2 text-center text-xs font-bold"
                             >
-                                Sub Kegiatan
+                                Sub Kegiatan & Pagu
                             </th>
                             <th
                                 rowspan="3"
@@ -262,7 +396,6 @@ function highlightText(text: string, query: string): string {
                             >
                                 Harga Satuan
                             </th>
-                            <th rowspan="3" class="w-32 border border-green-500 bg-green-700 p-2 text-center text-xs font-bold">Pagu Sub Kegiatan</th>
                             <th :colspan="months.length * 2" class="border border-green-500 bg-green-800 p-2 text-center text-xs font-bold">
                                 Rencana Bulanan {{ tahun }}
                             </th>
@@ -294,9 +427,10 @@ function highlightText(text: string, query: string): string {
                                         <td
                                             v-if="idx === 0"
                                             :rowspan="ssk.plans.length"
-                                            class="sticky left-0 z-10 w-48 border border-gray-300 bg-gray-50 p-2 align-top text-xs font-semibold text-gray-900"
+                                            class="sticky left-0 z-10 w-60 border border-gray-300 bg-gray-50 p-2 align-top text-xs font-semibold text-gray-900"
                                         >
                                             <div class="leading-tight" v-html="highlightText(ssk.nama, q)"></div>
+                                            <div class="mt-1 font-mono text-[11px] font-bold text-green-700">Pagu: {{ formatIDR(ssk.pagu) }}</div>
                                         </td>
                                         <td
                                             class="sticky left-[180px] z-10 w-44 border border-gray-300 bg-white p-1.5 text-xs font-medium text-gray-900"
@@ -309,13 +443,7 @@ function highlightText(text: string, query: string): string {
                                         >
                                             <div class="text-xs">{{ formatIDR(p.harga) }}</div>
                                         </td>
-                                        <td
-                                            v-if="idx === 0"
-                                            :rowspan="ssk.plans.length"
-                                            class="w-32 border border-gray-300 p-1.5 text-right font-mono text-xs font-semibold text-gray-900"
-                                        >
-                                            {{ formatIDR(ssk.pagu) }}
-                                        </td>
+
                                         <template v-for="m in months" :key="p.item_id + m">
                                             <td class="w-64 border border-gray-300 p-1.5 text-center">
                                                 <input
@@ -350,8 +478,9 @@ function highlightText(text: string, query: string): string {
                             <tr v-else class="bg-gray-100">
                                 <td class="sticky left-0 z-10 border border-gray-300 bg-gray-100 p-2 text-xs font-semibold text-gray-600">
                                     <span v-html="highlightText(ssk.nama, q)"></span>
+                                    <div class="mt-1 font-mono text-[11px] font-bold text-green-700">Pagu: {{ formatIDR(ssk.pagu) }}</div>
                                 </td>
-                                <td :colspan="months.length * 2 + 5" class="border border-gray-300 p-4 text-center text-xs text-gray-500 italic">
+                                <td :colspan="months.length * 2 + 4" class="border border-gray-300 p-4 text-center text-xs text-gray-500 italic">
                                     <div class="flex items-center justify-center gap-2">
                                         <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path
@@ -366,36 +495,39 @@ function highlightText(text: string, query: string): string {
                                 </td>
                             </tr>
                         </template>
-                        <!-- Combined Grand Total row -->
+                        <!-- Grand Total: Jumlah Pengeluaran kas Per Bulan dan Per Triwulan -->
                         <tr class="border-t-4 border-green-600 bg-gradient-to-r from-gray-100 to-gray-200 font-bold text-gray-800">
                             <td
-                                class="sticky left-0 z-10 border border-gray-400 bg-gradient-to-r from-gray-100 to-gray-200 p-2 text-center text-xs font-bold tracking-wide uppercase"
+                                class="sticky left-0 z-10 border border-gray-400 bg-gradient-to-r from-gray-100 to-gray-200 p-2 text-center text-xs font-bold tracking-wide"
+                                :colspan="3"
                             >
-                                TOTAL
+                                Jumlah Pengeluaran kas Per Bulan
                             </td>
-                            <td
-                                class="sticky left-[180px] z-10 border border-gray-400 bg-gradient-to-r from-gray-100 to-gray-200 p-2 text-center text-xs font-bold tracking-wide uppercase"
-                            >
-                                KESELURUHAN
-                            </td>
-                            <td
-                                class="sticky left-[340px] z-10 border border-gray-400 bg-gradient-to-r from-gray-100 to-gray-200 p-2 text-center text-xs font-bold tracking-wide uppercase"
-                            >
-                                -
-                            </td>
-                            <td class="border border-gray-400 p-2 text-right font-mono text-xs font-bold">{{ formatIDR(grand.totalPagu) }}</td>
-                            <template v-for="m in months" :key="'grand-total-' + m">
-                                <td class="w-24 border border-gray-400 p-1.5 text-center font-mono text-xs font-bold text-gray-800">-</td>
-                                <td class="w-32 border border-gray-400 p-1.5 text-right font-mono text-xs font-bold">
+                            <template v-for="m in months" :key="'grand-total-bulan-' + m">
+                                <td class="w-32 border border-gray-400 p-1.5 text-right font-mono text-xs font-bold" :colspan="2">
                                     {{ formatIDR(grandTotalAmountPerMonth(m)) }}
                                 </td>
                             </template>
-                            <td class="border border-gray-400 p-2 text-right font-mono text-xs font-bold">{{ formatIDR(grand.totalItems) }}</td>
+                            <td class="border border-gray-400 p-2 text-right font-mono text-xs font-bold" :colspan="2"></td>
+                        </tr>
+                        <tr class="border-t-2 border-green-400 bg-gradient-to-r from-gray-100 to-gray-200 font-bold text-gray-800">
                             <td
-                                class="border border-gray-400 p-2 text-right font-mono text-xs font-bold"
-                                :class="grand.totalSisa < 0 ? 'text-red-600' : 'text-green-600'"
+                                class="sticky left-0 z-10 border border-gray-400 bg-gradient-to-r from-gray-100 to-gray-200 p-2 text-center text-xs font-bold tracking-wide"
+                                :colspan="3"
                             >
-                                {{ formatIDR(grand.totalSisa) }}
+                                Jumlah Pengeluaran kas Per Triwulan
+                            </td>
+                            <td class="border border-gray-400 p-1.5 text-center font-mono text-xs font-bold text-gray-800" :colspan="6">
+                                Triwulan 1: {{ formatIDR(grandTotalAmountPerTriwulan(1)) }}
+                            </td>
+                            <td class="border border-gray-400 p-1.5 text-center font-mono text-xs font-bold text-gray-800" :colspan="6">
+                                Triwulan 2: {{ formatIDR(grandTotalAmountPerTriwulan(2)) }}
+                            </td>
+                            <td class="border border-gray-400 p-1.5 text-center font-mono text-xs font-bold text-gray-800" :colspan="6">
+                                Triwulan 3: {{ formatIDR(grandTotalAmountPerTriwulan(3)) }}
+                            </td>
+                            <td class="border border-gray-400 p-1.5 text-center font-mono text-xs font-bold text-gray-800" :colspan="6">
+                                Triwulan 4: {{ formatIDR(grandTotalAmountPerTriwulan(4)) }}
                             </td>
                         </tr>
                     </tbody>
