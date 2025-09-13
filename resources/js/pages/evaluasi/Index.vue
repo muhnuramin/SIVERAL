@@ -288,48 +288,7 @@ function highlightText(text: string, query: string): string {
                     />
                 </template>
                 <i class="fa fa-hand-pointer text-lg text-gray-600"></i>
-                <ConfirmModal v-if="showPdfModal" :open="showPdfModal" title="Cetak PDF Evaluasi" :hideButton="true" @close="closePdfModal">
-                    <div class="mb-2 flex flex-col gap-3">
-                        <button
-                            @click="pdfType = 'bulan'"
-                            :class="pdfType === 'bulan' ? 'bg-green-600 text-white' : 'bg-gray-100'"
-                            class="rounded px-3 py-2 font-semibold"
-                        >
-                            Jumlah Pengeluaran kas Keseluruhan
-                        </button>
-                        <button
-                            @click="pdfType = 'triwulan'"
-                            :class="pdfType === 'triwulan' ? 'bg-green-600 text-white' : 'bg-gray-100'"
-                            class="rounded px-3 py-2 font-semibold"
-                        >
-                            Jumlah Pengeluaran kas Per Triwulan
-                        </button>
-                    </div>
-                    <div v-if="pdfType === 'triwulan'" class="mt-2 flex flex-col gap-2">
-                        <div class="mb-2 font-semibold">Pilih Triwulan:</div>
-                        <div class="flex gap-2">
-                            <button
-                                v-for="q in 4"
-                                :key="'triwulan-btn-' + q"
-                                @click="selectedTriwulan = q"
-                                :class="selectedTriwulan === q ? 'bg-green-500 text-white' : 'bg-gray-200'"
-                                class="rounded px-3 py-1 font-semibold"
-                            >
-                                Triwulan {{ q }}
-                            </button>
-                        </div>
-                    </div>
-                    <div class="mt-6 flex justify-end gap-2">
-                        <button
-                            @click="handlePdfPrint"
-                            :disabled="!pdfType || (pdfType === 'triwulan' && !selectedTriwulan)"
-                            class="rounded bg-green-600 px-3 py-1 font-semibold text-white disabled:opacity-50"
-                        >
-                            Cetak
-                        </button>
-                    </div>
-                    <template #footer><div style="display: none"></div></template>
-                </ConfirmModal>
+
                 <div>
                     <div class="font-medium text-gray-800">Tips</div>
                     <div class="text-xs text-gray-600">
@@ -534,5 +493,47 @@ function highlightText(text: string, query: string): string {
                 </table>
             </div>
         </div>
+        <ConfirmModal v-if="showPdfModal" :open="showPdfModal" title="Cetak PDF Evaluasi" :hideButton="true" @close="closePdfModal">
+            <div class="mb-2 flex flex-col gap-3">
+                <button
+                    @click="pdfType = 'bulan'"
+                    :class="pdfType === 'bulan' ? 'bg-green-600 text-white' : 'bg-gray-100'"
+                    class="rounded px-3 py-2 font-semibold"
+                >
+                    Jumlah Pengeluaran kas Keseluruhan
+                </button>
+                <button
+                    @click="pdfType = 'triwulan'"
+                    :class="pdfType === 'triwulan' ? 'bg-green-600 text-white' : 'bg-gray-100'"
+                    class="rounded px-3 py-2 font-semibold"
+                >
+                    Jumlah Pengeluaran kas Per Triwulan
+                </button>
+            </div>
+            <div v-if="pdfType === 'triwulan'" class="mt-2 flex flex-col gap-2">
+                <div class="mb-2 font-semibold">Pilih Triwulan:</div>
+                <div class="flex gap-2">
+                    <button
+                        v-for="q in 4"
+                        :key="'triwulan-btn-' + q"
+                        @click="selectedTriwulan = q"
+                        :class="selectedTriwulan === q ? 'bg-green-500 text-white' : 'bg-gray-200'"
+                        class="rounded px-3 py-1 font-semibold"
+                    >
+                        Triwulan {{ q }}
+                    </button>
+                </div>
+            </div>
+            <div class="mt-6 flex justify-end gap-2">
+                <button
+                    @click="handlePdfPrint"
+                    :disabled="!pdfType || (pdfType === 'triwulan' && !selectedTriwulan)"
+                    class="rounded bg-green-600 px-3 py-1 font-semibold text-white disabled:opacity-50"
+                >
+                    Cetak
+                </button>
+            </div>
+            <template #footer><div style="display: none"></div></template>
+        </ConfirmModal>
     </AppLayout>
 </template>

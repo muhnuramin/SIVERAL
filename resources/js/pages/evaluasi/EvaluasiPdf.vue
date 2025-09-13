@@ -13,6 +13,8 @@ const props = defineProps<{
     formatIDR: (n: number) => string;
     monthlyAmount: (p: any, m: string) => number;
     totalPerItem: (p: any) => number;
+    type?: 'bulan' | 'triwulan';
+    triwulan?: number;
 }>();
 
 // Hitung jumlah kolom tabel
@@ -111,22 +113,110 @@ function buildTableBody(
             body.push(emptyRow);
         }
     });
-    // Grand total row: hanya satu cell dengan colSpan (tambahkan placeholder)
-    const totalRow: any[] = [
-        {
-            text: `TOTAL KESELURUHAN | Pagu: ${formatIDR(grand.totalPagu)}`,
-            colSpan: itemColCount,
+    // Baris Jumlah Pengeluaran kas Per Bulan
+    const perBulanRow: any[] = [];
+    perBulanRow.push({
+        text: 'Jumlah Pengeluaran kas Per Bulan',
+        style: 'th',
+        alignment: 'left',
+        fillColor: '#f0f0f0',
+        fontSize: 10,
+        bold: true,
+        colSpan: 2,
+    });
+    perBulanRow.push({ text: '' });
+    // Untuk setiap bulan, tampilkan total per bulan (gunakan props.grandTotalAmountPerMonth)
+    months.forEach((m) => {
+        perBulanRow.push({ text: '', style: 'th', alignment: 'center' }); // Vol
+        perBulanRow.push({ text: formatIDR(props.grandTotalAmountPerMonth(m)), style: 'th', alignment: 'right' }); // Rupiah
+    });
+    perBulanRow.push({ text: '', style: 'th', alignment: 'center' }); // Total Item
+    while (perBulanRow.length < itemColCount) {
+        perBulanRow.push({ text: '', style: 'th', alignment: 'center' });
+    }
+    body.push(perBulanRow);
+
+    // Baris Jumlah Pengeluaran kas Per Triwulan dengan colSpan per triwulan
+    let triwulanTotals: { total: number; months: string[] }[] = [];
+    const triwulanMap = [
+        ['jan', 'feb', 'mar'],
+        ['apr', 'mei', 'jun'],
+        ['jul', 'agu', 'sep'],
+        ['okt', 'nov', 'des'],
+    ];
+    triwulanMap.forEach((tw) => {
+        let total = 0;
+        tw.forEach((m) => {
+            if (months.includes(m)) {
+                total += props.grandTotalAmountPerMonth(m);
+            }
+        });
+        // Tampilkan hanya triwulan yang ada di months
+        if (tw.some((m) => months.includes(m))) {
+            triwulanTotals.push({
+                total,
+                months: tw.filter((m) => months.includes(m)),
+            });
+        }
+    });
+    const perTriwulanRow: any[] = [];
+    perTriwulanRow.push({
+        text: 'Jumlah Pengeluaran kas Per Triwulan',
+        style: 'th',
+        alignment: 'left',
+        fillColor: '#f0f0f0',
+        fontSize: 10,
+        bold: true,
+        colSpan: 2,
+    });
+    perTriwulanRow.push({ text: '' });
+    // Untuk setiap triwulan, tampilkan satu cell dengan colSpan sesuai jumlah kolom triwulan (2 kolom per bulan)
+    let monthIdx = 0;
+    triwulanTotals.forEach((tw, idx) => {
+        const span = tw.months.length * 2;
+        if (span > 0) {
+            perTriwulanRow.push({
+                text: formatIDR(tw.total),
+                style: 'th',
+                alignment: 'center',
+                fillColor: '#f0f0f0',
+                fontSize: 10,
+                bold: true,
+                colSpan: span,
+            });
+            // Tambahkan cell kosong untuk colSpan
+            for (let i = 1; i < span; i++) {
+                perTriwulanRow.push({ text: '' });
+            }
+            monthIdx += span;
+        }
+    });
+    // Kolom Total Item pada baris triwulan
+    if (props.type === 'triwulan') {
+        // Jumlahkan seluruh totalPerItem dari semua item pada triwulan aktif
+        let totalItemTriwulan = 0;
+        rows.forEach((ssk: any) => {
+            if (ssk.plans && ssk.plans.length) {
+                ssk.plans.forEach((p: any) => {
+                    totalItemTriwulan += props.totalPerItem(p);
+                });
+            }
+        });
+        perTriwulanRow.push({
+            text: formatIDR(totalItemTriwulan),
             style: 'th',
-            alignment: 'left',
+            alignment: 'right',
             fillColor: '#f0f0f0',
             fontSize: 10,
             bold: true,
-        },
-    ];
-    for (let i = 1; i < itemColCount; i++) {
-        totalRow.push({ text: '' });
+        });
+    } else {
+        perTriwulanRow.push({ text: '', style: 'th', alignment: 'center' });
     }
-    body.push(totalRow);
+    while (perTriwulanRow.length < itemColCount) {
+        perTriwulanRow.push({ text: '', style: 'th', alignment: 'center' });
+    }
+    body.push(perTriwulanRow);
     return body;
 }
 
@@ -134,11 +224,24 @@ function buildTableBody(
 function printPdfEvaluasi() {
     const tahun: number = props.tahun;
     const rows: any[] = props.rows;
-    const months: string[] = props.months;
+    let months: string[] = props.months;
     const grand: { totalPagu: number; totalItems: number; totalSisa: number } = props.grand;
     const formatIDR: (n: number) => string = props.formatIDR;
     const monthlyAmount: (p: any, m: string) => number = props.monthlyAmount;
     const totalPerItem: (p: any) => number = props.totalPerItem;
+    const type = props.type;
+    const triwulan = props.triwulan;
+
+    // Filter months jika type triwulan
+    if (type === 'triwulan' && triwulan) {
+        const triwulanMap = [
+            ['jan', 'feb', 'mar'],
+            ['apr', 'mei', 'jun'],
+            ['jul', 'agu', 'sep'],
+            ['okt', 'nov', 'des'],
+        ];
+        months = triwulanMap[triwulan - 1];
+    }
 
     // Buat header dan body tabel
     const tableHeader = buildTableHeader(months);
@@ -146,24 +249,30 @@ function printPdfEvaluasi() {
 
     // Definisi dokumen PDF
     const docDef = {
-        pageOrientation: 'landscape',
-        pageSize: 'A3',
+        pageOrientation: type === 'triwulan' ? 'portrait' : 'landscape',
+        pageSize: type === 'triwulan' ? 'A4' : 'A3',
         pageMargins: [10, 10, 10, 10],
         content: [
             { text: `Evaluasi Anggaran Tahun ${tahun}`, style: 'header', alignment: 'center', margin: [0, 0, 0, 8] },
-            { text: `Tanggal Cetak: ${new Date().toLocaleDateString('id-ID')}`, style: 'subheader', alignment: 'right', margin: [0, 0, 0, 8] },
-            {
-                table: {
-                    headerRows: 2,
-                    body: [...tableHeader, ...tableBody],
+            [
+                {
+                    alignment: 'center',
+                    table: {
+                        headerRows: 2,
+                        body: [...tableHeader, ...tableBody],
+                        width: 'auto',
+                    },
+                    layout: {
+                        hLineWidth: () => 0.5,
+                        vLineWidth: () => 0.5,
+                        hLineColor: () => '#aaa',
+                        vLineColor: () => '#aaa',
+                    },
                 },
-                layout: {
-                    hLineWidth: () => 0.5,
-                    vLineWidth: () => 0.5,
-                    hLineColor: () => '#aaa',
-                    vLineColor: () => '#aaa',
-                },
-            },
+            ],
+            { text: `\n\nGresik, 10 September 2025`, alignment: 'right', bold: true, fontSize: 10, margin: [0, 40, 0, 0] },
+            { text: `Mengesahkan,`, alignment: 'right', fontSize: 10, margin: [0, 10, 0, 0] },
+            { text: `\n\n\n`, alignment: 'right' },
         ],
         styles: {
             header: { fontSize: 16, bold: true },

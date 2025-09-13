@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\PelaporanController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\ProgramController;
 use App\Http\Controllers\KegiatanController;
@@ -27,7 +28,8 @@ Route::get('dashboard', function () {
     return Inertia::render('Dashboard');
 })->middleware(['auth', 'verified'])->name('dashboard');
 
-
+Route::get('/pelaporan', [PelaporanController::class, 'index'])->name('pelaporan.index');
+Route::post('/pelaporan', [PelaporanController::class, 'store'])->name('pelaporan.store');
 // user CRUD routes
 Route::get('/user',[UserController::class,'viewuser'])->middleware(['auth', 'verified'])->name('user');
 Route::post('/user', [UserController::class, 'store'])->middleware(['auth', 'verified'])->name('user.store');

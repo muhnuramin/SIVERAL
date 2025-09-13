@@ -34,18 +34,14 @@ const mainNavItems: NavItem[] = [
         children: [
             { title: 'Perencanaan', href: route('anggaran.perencanaan'), icon: FileText },
             { title: 'Evaluasi', href: route('evaluasi.index'), icon: CheckCircle2 },
-            { title: 'Pelaporan', href: '#', icon: BarChart2 },
+            { title: 'Pelaporan', href: route('pelaporan.index'), icon: BarChart2 },
         ],
     },
     {
         title: 'Settings',
         href: '/settings',
         icon: Settings,
-        children: [
-            { title: 'User', href: route('user'), icon: Users },
-            // { title: 'Batasan Pagu', href: route('pagu.index'), icon: Banknote },
-            // { title: 'SSH', href: route('ssh-harga.index'), icon: BadgeDollarSign },
-        ],
+        children: [{ title: 'User', href: route('user'), icon: Users }],
     },
     {
         title: 'Master',
