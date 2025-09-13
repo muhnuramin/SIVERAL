@@ -10,9 +10,7 @@ class HakAksesGrupSeeder extends Seeder
     public function run(): void
     {
         $groups = [
-            ['nama' => 'Admin', 'hak_akses' => ['user.create','user.update','user.delete','settings.manage']],
-            ['nama' => 'Operator', 'hak_akses' => ['rka.view','rka.edit']],
-            ['nama' => 'Viewer', 'hak_akses' => ['rka.view']],
+            ['nama' => 'Admin', 'hak_akses' => ["Super Admin"]],
         ];
 
         foreach ($groups as $g) {
