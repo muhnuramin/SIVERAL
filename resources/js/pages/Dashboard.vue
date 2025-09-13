@@ -3,7 +3,7 @@ import YearPickerModal from '@/components/YearPickerModal.vue';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { type BreadcrumbItem } from '@/types';
 import { Head, router } from '@inertiajs/vue3';
-import { ArcElement, BarController, BarElement, CategoryScale, Chart, Legend, LinearScale, Tooltip, PieController } from 'chart.js';
+import { ArcElement, BarController, BarElement, CategoryScale, Chart, Legend, LinearScale, PieController, Tooltip } from 'chart.js';
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -176,8 +176,26 @@ function renderPie() {
     const values = pieValues.value;
     if (!labels.length || !values.length || !values.some((v) => v > 0)) return;
     const colors = [
-        '#0ea5e9', '#22c55e', '#f59e0b', '#ef4444', '#a855f7', '#14b8a6', '#e11d48', '#84cc16', '#06b6d4', '#f97316',
-        '#3b82f6', '#10b981', '#eab308', '#fb7185', '#8b5cf6', '#34d399', '#f43f5e', '#65a30d', '#0891b2', '#ea580c',
+        '#0ea5e9',
+        '#22c55e',
+        '#f59e0b',
+        '#ef4444',
+        '#a855f7',
+        '#14b8a6',
+        '#e11d48',
+        '#84cc16',
+        '#06b6d4',
+        '#f97316',
+        '#3b82f6',
+        '#10b981',
+        '#eab308',
+        '#fb7185',
+        '#8b5cf6',
+        '#34d399',
+        '#f43f5e',
+        '#65a30d',
+        '#0891b2',
+        '#ea580c',
     ];
     pieInstance = new Chart(pieCanvas.value, {
         type: 'pie',
@@ -292,9 +310,7 @@ watch([pieLabels, pieValues], () => requestAnimationFrame(() => renderPie()));
                         <template v-if="(props.subKegiatanPagu?.lebihan || 0) > 0">
                             Lebihan: {{ formatIDR(props.subKegiatanPagu?.lebihan || 0) }}
                         </template>
-                        <template v-else>
-                            Sisa: {{ formatIDR(props.subKegiatanPagu?.sisa || 0) }}
-                        </template>
+                        <template v-else> Sisa: {{ formatIDR(props.subKegiatanPagu?.sisa || 0) }} </template>
                     </div>
                 </div>
                 <div class="w-full">
