@@ -127,6 +127,12 @@ Route::get('/anggaran/evaluasi', [EvaluasiController::class, 'index'])
 Route::post('/anggaran/evaluasi/bulk-save', [EvaluasiController::class, 'bulkSave'])
     ->middleware(['auth','verified'])
     ->name('evaluasi.bulk-save');
+Route::post('/anggaran/evaluasi/validate-triwulan', [EvaluasiController::class, 'validateTriwulan'])
+    ->middleware(['auth','verified'])
+    ->name('evaluasi.validate-triwulan');
+Route::post('/anggaran/evaluasi/unvalidate-triwulan', [EvaluasiController::class, 'unvalidateTriwulan'])
+    ->middleware(['auth','verified'])
+    ->name('evaluasi.unvalidate-triwulan');
 
 // Satuan CRUD routes
 Route::get('/satuan', [SatuanController::class, 'index'])

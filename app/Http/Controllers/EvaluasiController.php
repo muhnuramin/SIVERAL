@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\RkaItemPlan;
+use App\Models\EvaluasiTriwulanValidation;
 use App\Models\RekeningSshItem;
 use App\Models\RekeningSshItemHarga;
 use App\Models\SubSubKegiatan;
@@ -118,9 +119,13 @@ class EvaluasiController extends Controller
             ];
         })->values();
 
+        $validatedTriwulan = EvaluasiTriwulanValidation::where('tahun', $tahun)
+            ->pluck('validated_at', 'triwulan');
+
         return Inertia::render('evaluasi/Index', [
             'tahun' => $tahun,
             'data' => ['ssk' => $output],
+            'validatedTriwulan' => $validatedTriwulan,
         ]);
     }
 
@@ -145,6 +150,16 @@ class EvaluasiController extends Controller
             'rows.*.des_vol' => 'nullable|integer|min:0',
         ]);
         $tahun = (int)$validated['tahun'];
+
+        // Determine locked months based on validated triwulan
+        $lockedTri = EvaluasiTriwulanValidation::where('tahun', $tahun)->pluck('triwulan')->all();
+        $triMap = [
+            1 => ['jan','feb','mar'],
+            2 => ['apr','mei','jun'],
+            3 => ['jul','agu','sep'],
+            4 => ['okt','nov','des'],
+        ];
+        $lockedMonths = collect($lockedTri)->flatMap(fn($q) => $triMap[$q] ?? [])->values()->all();
         foreach ($validated['rows'] as $row) {
             $plan = RkaItemPlan::firstOrNew([
                 'sub_sub_kegiatan_id' => $row['sub_sub_kegiatan_id'],
@@ -152,10 +167,39 @@ class EvaluasiController extends Controller
                 'tahun' => $tahun,
             ]);
             foreach (['jan','feb','mar','apr','mei','jun','jul','agu','sep','okt','nov','des'] as $m) {
+                if (in_array($m, $lockedMonths, true)) continue; // skip locked months
                 $plan->{$m.'_vol'} = (int)($row[$m.'_vol'] ?? 0);
             }
             $plan->save();
         }
         return back()->with('success','Rencana bulanan tersimpan');
+    }
+
+    public function validateTriwulan(Request $request)
+    {
+        $data = $request->validate([
+            'tahun' => 'required|integer',
+            'triwulan' => 'required|integer|min:1|max:4',
+        ]);
+        $rec = EvaluasiTriwulanValidation::firstOrNew([
+            'tahun' => (int)$data['tahun'],
+            'triwulan' => (int)$data['triwulan'],
+        ]);
+    $rec->validated_by = Auth::id();
+        $rec->validated_at = now();
+        $rec->save();
+        return back()->with('success', 'Triwulan divalidasi');
+    }
+
+    public function unvalidateTriwulan(Request $request)
+    {
+        $data = $request->validate([
+            'tahun' => 'required|integer',
+            'triwulan' => 'required|integer|min:1|max:4',
+        ]);
+        EvaluasiTriwulanValidation::where('tahun', (int)$data['tahun'])
+            ->where('triwulan', (int)$data['triwulan'])
+            ->delete();
+        return back()->with('success', 'Triwulan dibuka kembali');
     }
 }

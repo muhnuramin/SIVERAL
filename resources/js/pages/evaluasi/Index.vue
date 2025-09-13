@@ -44,10 +44,35 @@ const props = defineProps<{
             plans: { plan_id: number | null; item_id: number; nama: string; satuan: string; harga: number; vol: Record<string, number> }[];
         }[];
     };
+    validatedTriwulan?: Record<string, string | null>;
 }>();
 
 const notify = useNotify();
 const months: string[] = ['jan', 'feb', 'mar', 'apr', 'mei', 'jun', 'jul', 'agu', 'sep', 'okt', 'nov', 'des'];
+
+// Triwulan locks
+const triwulanMap: Record<number, string[]> = {
+    1: ['jan', 'feb', 'mar'],
+    2: ['apr', 'mei', 'jun'],
+    3: ['jul', 'agu', 'sep'],
+    4: ['okt', 'nov', 'des'],
+};
+function monthToTriwulan(m: string): number {
+    if (['jan', 'feb', 'mar'].includes(m)) return 1;
+    if (['apr', 'mei', 'jun'].includes(m)) return 2;
+    if (['jul', 'agu', 'sep'].includes(m)) return 3;
+    return 4;
+}
+const lockedTriwulans = computed<Set<number>>(() => {
+    const src = props.validatedTriwulan || {};
+    const keys = Object.keys(src)
+        .map((k) => parseInt(k))
+        .filter((n) => [1, 2, 3, 4].includes(n));
+    return new Set(keys);
+});
+function isMonthLocked(m: string) {
+    return lockedTriwulans.value.has(monthToTriwulan(m));
+}
 
 // Search functionality
 const q = ref('');
@@ -192,6 +217,19 @@ function save() {
     );
 }
 
+function setTriwulanValidation(q: number, action: 'validate' | 'unvalidate') {
+    const routeName = action === 'validate' ? 'evaluasi.validate-triwulan' : 'evaluasi.unvalidate-triwulan';
+    router.post(
+        route(routeName),
+        { tahun: props.tahun, triwulan: q },
+        {
+            preserveScroll: true,
+            onSuccess: () => notify.success(action === 'validate' ? 'Triwulan divalidasi' : 'Triwulan dibuka kembali'),
+            onError: () => notify.error('Aksi gagal'),
+        },
+    );
+}
+
 // Auto-save with debounce
 function autoSave() {
     if (saveTimeout) {
@@ -296,6 +334,35 @@ function highlightText(text: string, query: string): string {
                         <span class="mr-1 ml-1 inline-block rounded border bg-gray-100 px-2 py-0.5 text-[11px] font-semibold">Shift</span>
                         lalu gulir roda mouse ke atas atau ke bawah.
                     </div>
+                </div>
+
+                <!-- Validasi Triwulan Controls -->
+                <div class="ml-auto flex flex-wrap items-center gap-2">
+                    <template v-for="q in 4" :key="'val-q-' + q">
+                        <div
+                            class="flex items-center gap-2 rounded border px-2 py-1"
+                            :class="lockedTriwulans.has(q) ? 'border-green-300 bg-green-50' : 'border-gray-200 bg-white'"
+                        >
+                            <span class="text-xs font-semibold">TW {{ q }}</span>
+                            <span v-if="lockedTriwulans.has(q)" class="rounded bg-green-600 px-1.5 py-0.5 text-[10px] font-semibold text-white"
+                                >Tervalidasi</span
+                            >
+                            <button
+                                v-if="!lockedTriwulans.has(q)"
+                                @click="setTriwulanValidation(q, 'validate')"
+                                class="rounded bg-green-600 px-2 py-0.5 text-[11px] font-semibold text-white hover:bg-green-700"
+                            >
+                                Validasi
+                            </button>
+                            <button
+                                v-else
+                                @click="setTriwulanValidation(q, 'unvalidate')"
+                                class="rounded bg-amber-500 px-2 py-0.5 text-[11px] font-semibold text-white hover:bg-amber-600"
+                            >
+                                Buka Kunci
+                            </button>
+                        </div>
+                    </template>
                 </div>
             </div>
             <!-- Search Results Info -->
@@ -412,7 +479,10 @@ function highlightText(text: string, query: string): string {
                                                     step="1"
                                                     placeholder="0"
                                                     @blur="autoSave"
-                                                    class="w-full max-w-25 min-w-25 rounded border border-gray-200 bg-white px-2 py-1.5 text-center text-sm focus:border-blue-400 focus:ring-1 focus:ring-blue-200 focus:outline-none"
+                                                    :disabled="isMonthLocked(m)"
+                                                    :title="isMonthLocked(m) ? 'Terkunci (tervalidasi)' : 'Input volume'"
+                                                    class="w-full max-w-25 min-w-25 rounded border border-gray-200 px-2 py-1.5 text-center text-sm focus:border-green-500 focus:ring-1 focus:ring-green-200 focus:outline-none"
+                                                    :class="isMonthLocked(m) ? 'cursor-not-allowed bg-gray-100' : 'bg-white'"
                                                     style="appearance: none; -moz-appearance: textfield"
                                                 />
                                             </td>
