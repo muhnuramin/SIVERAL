@@ -16,6 +16,7 @@ use App\Http\Controllers\RekeningController;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
+use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\PrintAnggaranController;
 
 require __DIR__.'/settings.php';
@@ -24,9 +25,7 @@ Route::get('/',[UserController::class,'index'])->name('home');
 // program CRUD (handled below)
 
 
-Route::get('dashboard', function () {
-    return Inertia::render('Dashboard');
-})->middleware(['auth', 'verified'])->name('dashboard');
+Route::get('dashboard', [DashboardController::class, 'index'])->middleware(['auth', 'verified'])->name('dashboard');
 
 Route::get('/pelaporan', [PelaporanController::class, 'index'])->name('pelaporan.index');
 Route::post('/pelaporan', [PelaporanController::class, 'store'])->name('pelaporan.store');

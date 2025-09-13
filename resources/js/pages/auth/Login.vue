@@ -27,7 +27,7 @@ const appName = (import.meta.env as any).VITE_APP_NAME ?? 'Aplikasi';
                     <div class="h-24 w-24 rounded-full bg-gradient-to-br from-green-300 to-emerald-400 opacity-30 blur-md"></div>
                 </div>
                 <h1 class="mb-2 text-3xl font-extrabold text-green-600 sm:text-4xl">{{ appName }}</h1>
-                <p class="mb-2 text-sm text-gray-600">Sistem Perencanaan, Evaluasi, dan Pelaporan</p>
+                <p class="mb-2 text-sm text-gray-600">Sistem Informasi pengAnggaran Pelayanan BLUD</p>
                 <p class="text-gray-500">Selamat datang kembali — masukkan NIP dan kata sandi Anda untuk melanjutkan.</p>
             </div>
 

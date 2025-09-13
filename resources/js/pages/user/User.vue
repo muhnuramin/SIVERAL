@@ -11,6 +11,7 @@ const Modal = ref({
     ModalHapus: false,
     ModalCreate: false,
     ModalUpdate: false,
+    ModalGroup: false,
 });
 
 const props = defineProps<{
@@ -83,6 +84,7 @@ function openEditGroup(g: any) {
     groupForm.nama = g.nama;
     groupForm.hak_akses = g.hak_akses ?? [];
     hakAksesChecked.value = g.hak_akses ?? [];
+    Modal.value.ModalGroup = true;
 }
 
 function resetGroupForm() {
@@ -94,9 +96,23 @@ function resetGroupForm() {
 function submitGroup() {
     groupForm.hak_akses = hakAksesChecked.value || [];
     if (editGroupId.value) {
-        groupForm.put(route('hakaksesgrup.update', editGroupId.value), { onSuccess: () => resetGroupForm() });
+        groupForm.put(route('hakaksesgrup.update', editGroupId.value), {
+            onSuccess: () => {
+                resetGroupForm();
+                Modal.value.ModalGroup = false;
+                notify.success('Grup berhasil disimpan');
+            },
+            onError: () => notify.error('Gagal menyimpan grup'),
+        });
     } else {
-        groupForm.post(route('hakaksesgrup.store'), { onSuccess: () => resetGroupForm() });
+        groupForm.post(route('hakaksesgrup.store'), {
+            onSuccess: () => {
+                resetGroupForm();
+                Modal.value.ModalGroup = false;
+                notify.success('Grup berhasil dibuat');
+            },
+            onError: () => notify.error('Gagal membuat grup'),
+        });
     }
 }
 
@@ -108,6 +124,11 @@ function removeGroup(id: number) {
 function refreshPage() {
     // use location to reload the page from the browser context
     location.reload();
+}
+
+function openCreateGroup() {
+    resetGroupForm();
+    Modal.value.ModalGroup = true;
 }
 
 function openCreate() {
@@ -201,15 +222,11 @@ function confirmDelete() {
                         @click="openCreate"
                         class="inline-flex items-center gap-2 rounded-full bg-emerald-600 px-4 py-2 text-sm font-medium text-white shadow hover:bg-emerald-700 focus:ring-2 focus:ring-emerald-500 focus:outline-none"
                     >
-                        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                            <path d="M12 5v14M5 12h14" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-                        </svg>
+                        <i class="fa-solid fa-plus text-sm text-white"></i>
                         Tambah User
                     </button>
                     <button @click="refreshPage" title="Refresh" class="rounded-full bg-slate-100 px-3 py-2 text-sm hover:bg-slate-200">
-                        <svg class="h-4 w-4 text-slate-600" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                            <path d="M21 12a9 9 0 11-3-6.72" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-                        </svg>
+                        <i class="fa-solid fa-rotate-right text-sm text-slate-600"></i>
                     </button>
                 </div>
             </div>
@@ -295,23 +312,14 @@ function confirmDelete() {
                                         @click.prevent="openUpdate(user)"
                                         class="inline-flex items-center gap-2 rounded-md bg-slate-100 px-3 py-1 text-sm hover:bg-slate-200"
                                     >
-                                        <svg class="h-4 w-4 text-slate-600" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                                            <path d="M11 5h6M6 12h12M6 19h12" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-                                        </svg>
+                                        <i class="fa-solid fa-pen text-sm text-slate-600"></i>
                                         Edit
                                     </button>
                                     <button
                                         @click.prevent="openDelete(user)"
                                         class="inline-flex items-center gap-2 rounded-md bg-red-600 px-3 py-1 text-sm text-white hover:bg-red-700"
                                     >
-                                        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                                            <path
-                                                d="M3 6h18M8 6v14a2 2 0 0 0 2 2h4a2 2 0 0 0 2-2V6"
-                                                stroke-width="2"
-                                                stroke-linecap="round"
-                                                stroke-linejoin="round"
-                                            />
-                                        </svg>
+                                        <i class="fa-solid fa-trash text-sm text-white"></i>
                                         Hapus
                                     </button>
                                 </div>
@@ -324,9 +332,18 @@ function confirmDelete() {
                 </table>
 
                 <!-- Hak Akses Grup (embedded CRUD) -->
-                <div class="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-3">
-                    <div class="col-span-2 rounded-lg bg-gradient-to-r from-slate-50 to-white p-4 shadow-inner">
-                        <h3 class="mb-3 text-lg font-bold text-slate-700">Daftar Grup Akses</h3>
+                <div class="mt-8 grid grid-cols-1 gap-6">
+                    <div class="rounded-lg bg-gradient-to-r from-slate-50 to-white p-4 shadow-inner">
+                        <div class="mb-3 flex items-center justify-between">
+                            <h3 class="text-lg font-bold text-slate-700">Daftar Grup Akses</h3>
+                            <button
+                                @click="openCreateGroup"
+                                class="inline-flex items-center gap-2 rounded-md bg-emerald-600 px-3 py-1 text-sm text-white hover:bg-emerald-700"
+                            >
+                                <i class="fa-solid fa-plus text-xs text-white"></i>
+                                Tambah Grup
+                            </button>
+                        </div>
                         <div class="overflow-auto rounded-md border border-slate-100">
                             <table class="min-w-full bg-white">
                                 <thead class="bg-slate-50">
@@ -357,12 +374,14 @@ function confirmDelete() {
                                                 class="inline-flex items-center gap-2 rounded-md bg-amber-100 px-3 py-1 text-sm"
                                                 @click="openEditGroup(g)"
                                             >
+                                                <i class="fa-solid fa-pen text-xs text-amber-700"></i>
                                                 Edit
                                             </button>
                                             <button
                                                 class="ml-2 inline-flex items-center gap-2 rounded-md bg-red-100 px-3 py-1 text-sm text-red-700"
                                                 @click="removeGroup(g.id)"
                                             >
+                                                <i class="fa-solid fa-trash text-xs text-red-700"></i>
                                                 Hapus
                                             </button>
                                         </td>
@@ -370,30 +389,6 @@ function confirmDelete() {
                                 </tbody>
                             </table>
                         </div>
-                    </div>
-                    <div class="col-span-1 rounded-lg bg-white p-4 shadow-md">
-                        <h3 class="mb-3 text-lg font-bold text-slate-700">Buat / Edit Grup</h3>
-                        <form @submit.prevent="submitGroup" class="space-y-3">
-                            <label class="block">
-                                <span class="text-sm font-medium text-slate-600">Nama Grup</span>
-                                <input v-model="groupForm.nama" class="mt-1 w-full rounded border px-3 py-2" placeholder="Contoh: Admin" />
-                            </label>
-                            <label class="block">
-                                <span class="text-sm font-medium text-slate-600">Hak Akses</span>
-                                <div class="mt-2 grid grid-cols-1 gap-2">
-                                    <label v-for="perm in PERMISSIONS" :key="perm" class="inline-flex items-center gap-2">
-                                        <input type="checkbox" :value="perm" v-model="hakAksesChecked" class="h-4 w-4" />
-                                        <span class="text-sm text-slate-700">{{ perm }}</span>
-                                    </label>
-                                </div>
-                            </label>
-                            <div class="flex justify-end gap-2">
-                                <button type="button" @click="resetGroupForm" class="rounded-md border px-3 py-1 text-sm">Batal</button>
-                                <button type="submit" class="rounded-md bg-emerald-600 px-3 py-1 text-sm text-white">
-                                    {{ editGroupId ? 'Simpan' : 'Buat' }}
-                                </button>
-                            </div>
-                        </form>
                     </div>
                 </div>
             </div>
@@ -503,6 +498,37 @@ function confirmDelete() {
                 <button @click="Modal.ModalHapus = false" class="rounded border px-4 py-2">Batal</button>
                 <button @click.prevent="confirmDelete" class="rounded bg-red-600 px-4 py-2 text-white">Hapus</button>
             </div>
+        </div>
+    </div>
+
+    <!-- Modal Group (Create / Edit Grup) -->
+    <div v-if="Modal.ModalGroup" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+        <div class="w-full max-w-lg rounded bg-white p-6 dark:bg-slate-800">
+            <div class="mb-2 flex items-center justify-between">
+                <h3 class="text-lg font-semibold">{{ editGroupId ? 'Edit Grup Akses' : 'Buat Grup Akses' }}</h3>
+                <button @click="Modal.ModalGroup = false" class="rounded p-1 text-slate-500 hover:bg-slate-100">✕</button>
+            </div>
+            <form @submit.prevent="submitGroup" class="space-y-3">
+                <label class="block">
+                    <span class="text-sm font-medium text-slate-600">Nama Grup</span>
+                    <input v-model="groupForm.nama" class="mt-1 w-full rounded border px-3 py-2" placeholder="Contoh: Admin" />
+                </label>
+                <label class="block">
+                    <span class="text-sm font-medium text-slate-600">Hak Akses</span>
+                    <div class="mt-2 grid grid-cols-1 gap-2">
+                        <label v-for="perm in PERMISSIONS" :key="perm" class="inline-flex items-center gap-2">
+                            <input type="checkbox" :value="perm" v-model="hakAksesChecked" class="h-4 w-4" />
+                            <span class="text-sm text-slate-700">{{ perm }}</span>
+                        </label>
+                    </div>
+                </label>
+                <div class="flex justify-end gap-2">
+                    <button type="button" @click="Modal.ModalGroup = false" class="rounded-md border px-3 py-1 text-sm">Batal</button>
+                    <button type="submit" class="rounded-md bg-emerald-600 px-3 py-1 text-sm text-white">
+                        {{ editGroupId ? 'Simpan' : 'Buat' }}
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
 </template>
